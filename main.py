@@ -152,8 +152,33 @@ async def process_contact(message: types.Message, state: FSMContext):
     await state.clear()
 
 async def main():
+    # Render.com uchun PORT sozlamasi
+    # Render PORT muhit o'zgaruvchisini avtomat beradi. 
+    # Agar u bo'lsa, demak biz serverda ishlayapmiz.
+    port = os.getenv("PORT")
+    
+    if port:
+        # Render-da tekin Web Service ishlatish uchun kichik web server
+        from aiohttp import web
+        
+        async def handle(request):
+            return web.Response(text="TohirMalik Bot ishlayapti...")
+
+        app = web.Application()
+        app.router.add_get("/", handle)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, "0.0.0.0", int(port))
+        
+        # Serverni fonda yurgizamiz
+        asyncio.create_task(site.start())
+        logging.info(f"Veb-server {port}-portda ishga tushdi.")
+
     logging.basicConfig(level=logging.INFO)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        logging.info("Bot to'xtatildi.")
